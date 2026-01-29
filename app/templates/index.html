@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Header with Add Button -->
+<div class="mb-8 relative">
+    <h1 class="text-4xl font-bold text-neutral-800 dark:text-neutral-100 text-center">repeats</h1>
+    <button onclick="document.getElementById('addTaskModal').classList.remove('hidden')"
+            class="absolute top-0 right-0 bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-full p-3 shadow-lg transition duration-150">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+    </button>
+</div>
+
+<!-- Task List -->
+<div class="space-y-3" id="task-list">
+    {% for task in tasks %}
+        {% include '_task_item.html' %}
+    {% endfor %}
+
+    {% if not tasks %}
+    <div class="text-center py-12 text-neutral-400 dark:text-neutral-500" id="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <p class="text-lg">No tasks yet. Click the + button to add your first task!</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Task Modal -->
+<div id="addTaskModal" class="hidden fixed inset-0 bg-neutral-900 bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">Add New Task</h2>
+            <button onclick="document.getElementById('addTaskModal').classList.add('hidden')"
+                    class="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form hx-post="/tasks"
+              hx-target="#task-list"
+              hx-swap="afterbegin"
+              hx-on::after-request="this.reset(); document.getElementById('addTaskModal').classList.add('hidden'); const emptyState = document.getElementById('empty-state'); if(emptyState) emptyState.remove();"
+              class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Task Title</label>
+                <input type="text"
+                       name="title"
+                       placeholder="e.g., Morning exercise"
+                       required
+                       autofocus
+                       autocomplete="off"
+                       class="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 bg-white dark:bg-neutral-700">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Description (optional)</label>
+                <textarea name="description"
+                          placeholder="Add any additional details..."
+                          rows="3"
+                          autocomplete="off"
+                          class="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 bg-white dark:bg-neutral-700"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="button"
+                        onclick="document.getElementById('addTaskModal').classList.add('hidden'); document.querySelector('#addTaskModal form').reset();"
+                        class="flex-1 bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-200 font-medium py-2 px-4 rounded-md transition duration-150">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="flex-1 bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-md transition duration-150">
+                    Add Task
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Close modal when clicking outside -->
+<script>
+    document.getElementById('addTaskModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}

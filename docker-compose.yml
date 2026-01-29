@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount instance directory to persist SQLite database
+      - ./instance:/app/instance
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=production
+    restart: unless-stopped
