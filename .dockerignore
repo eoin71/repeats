@@ -1,31 +1,44 @@
 # Python
 __pycache__/
-*.py[oc]
-*.egg-info
-.venv
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
 venv/
+.venv/
+*.egg-info/
+dist/
+build/
 
 # Database
 instance/
-
-# Git
-.git/
-.gitignore
+*.db
+*.sqlite
+*.sqlite3
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# OS
-.DS_Store
-Thumbs.db
+# Git
+.git/
+.gitignore
 
 # Documentation
 README.md
+LICENSE
 
 # Docker
 Dockerfile
 docker-compose.yml
 .dockerignore
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log
+.python-version
