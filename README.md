@@ -1,3 +1,6 @@
+![App Screenshot](images/screenshot.png)
+
+
 # Repeats
 
 A simple, single-user web application for tracking daily repeating tasks. Tasks automatically reset each day, making it perfect for maintaining daily habits and routines.
