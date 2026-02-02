@@ -13,6 +13,8 @@ A simple, single-user web application for tracking daily repeating tasks. Tasks 
 - **Persistent History**: All completion data is stored for potential future analytics
 - **Dark Mode**: Automatically adapts to your system's color scheme preference
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **History**: Shows the last 7 days of task history
+
 
 ## Technology Stack
 
