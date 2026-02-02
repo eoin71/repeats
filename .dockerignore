@@ -42,3 +42,4 @@ docker-compose.yml
 Thumbs.db
 *.log
 .python-version
+_dockerhub_deploy_instructions.txt

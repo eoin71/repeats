@@ -11,3 +11,6 @@ wheels/
 
 # Flask instance folder (SQLite database)
 instance/
+
+# eoins files
+_dockerhub_deploy_instructions.txt
