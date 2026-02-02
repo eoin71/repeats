@@ -58,27 +58,48 @@ The application will be available at `http://localhost:5000`
 
 ## Docker Deployment
 
-### Building the Docker Image
+### Quick Start (Production)
 
-Build the Docker image:
-```bash
-docker build -t repeats-app .
+The easiest way to deploy is using the pre-built Docker Hub image:
+
+1. Download the production docker-compose file or create `docker-compose.prod.yml`:
+```yaml
+version: '3.8'
+
+services:
+  web:
+    image: eoin71/repeats:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - repeats-data:/app/instance
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=production
+    restart: unless-stopped
+
+volumes:
+  repeats-data:
 ```
 
-### Running with Docker
-
-Run the container:
+2. Start the application:
 ```bash
-docker run -d -p 5000:5000 -v ./instance:/app/instance --name repeats repeats-app
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-The `-v ./instance:/app/instance` flag mounts a volume to persist your SQLite database on the host machine.
+The application will be available at `http://localhost:5000`
 
-### Running with Docker Compose
+**Benefits:**
+- No build required - pulls pre-built multi-platform image (supports amd64 and arm64)
+- Faster deployment
+- Consistent across all environments
+- Automatic updates by pulling latest image
 
-For easier management, use Docker Compose:
+### Development/Local Deployment
 
-1. Start the application:
+For local development or building from source:
+
+1. Build and run with Docker Compose:
 ```bash
 docker-compose up -d
 ```
@@ -93,7 +114,22 @@ docker-compose logs -f
 docker-compose down
 ```
 
-The application will be available at `http://localhost:5000`
+### Manual Docker Build
+
+If you want to build the image yourself:
+
+```bash
+docker build -t repeats-app .
+docker run -d -p 5000:5000 -v repeats-data:/app/instance --name repeats repeats-app
+```
+
+### Multi-Platform Builds
+
+To build for multiple architectures (amd64, arm64):
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 -t your-username/repeats:latest --push .
+```
 
 ## How It Works
 
@@ -140,7 +176,8 @@ repeats/
 ├── instance/                # SQLite database location (gitignored)
 ├── run.py                   # Application entry point
 ├── Dockerfile               # Docker configuration
-├── docker-compose.yml       # Docker Compose configuration
+├── docker-compose.yml       # Development Docker Compose
+├── docker-compose.prod.yml  # Production Docker Compose (Docker Hub)
 └── pyproject.toml          # Python dependencies
 ```
 
@@ -160,10 +197,27 @@ The production deployment uses Gunicorn with:
 
 ## Data Persistence
 
-The SQLite database is stored in the `instance/` directory. When running with Docker, make sure to mount this directory as a volume to prevent data loss when containers are recreated:
+The SQLite database is stored in the `instance/` directory.
 
+**Docker Volumes:**
+- **Production (docker-compose.prod.yml)**: Uses a named Docker volume `repeats-data` for automatic management and portability
+- **Development (docker-compose.yml)**: Uses a named Docker volume for consistent behavior
+- **Manual runs**: Use `-v repeats-data:/app/instance` or bind mount with `-v ./instance:/app/instance`
+
+Named volumes are recommended as they:
+- Handle permissions correctly across platforms
+- Are managed by Docker
+- Work consistently on all operating systems
+- Survive container deletion
+
+To backup your data:
 ```bash
--v ./instance:/app/instance
+docker run --rm -v repeats-data:/data -v $(pwd):/backup alpine tar czf /backup/repeats-backup.tar.gz -C /data .
+```
+
+To restore from backup:
+```bash
+docker run --rm -v repeats-data:/data -v $(pwd):/backup alpine tar xzf /backup/repeats-backup.tar.gz -C /data
 ```
 
 ## Customization

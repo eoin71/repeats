@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  web:
+    image: eoin71/repeats:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      # Use named volume to persist SQLite database with proper permissions
+      - repeats-data:/app/instance
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=production
+    restart: unless-stopped
+
+volumes:
+  repeats-data:
