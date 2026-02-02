@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Tasks</title>
+    <title>repeats</title>
 
     <!-- Google Fonts - Google Sans Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -60,9 +60,11 @@
                         danger: {
                             50: '#FEF2F2',
                             100: '#FEE2E2',
+                            400: '#F87171',
                             500: '#EF4444',
                             600: '#DC2626',
                             700: '#B91C1C',
+                            900: '#7F1D1D',
                         }
                     }
                 }
@@ -82,7 +84,7 @@
     </style>
 </head>
 <body class="bg-neutral-50 dark:bg-neutral-900 min-h-screen transition-colors duration-200">
-    <div class="container mx-auto px-4 py-8 max-w-3xl">
+    <div class="container mx-auto px-4 py-8 pb-24 max-w-3xl">
         {% block content %}{% endblock %}
     </div>
 </body>

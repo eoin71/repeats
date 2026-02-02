@@ -1,0 +1,43 @@
+{% if history %}
+<div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-primary-200 dark:border-primary-700 px-4 py-3">
+    <div class="max-w-2xl mx-auto">
+        <div class="flex items-center justify-center gap-2">
+            <div class="flex gap-1">
+                {% for day in history %}
+                <div class="group relative">
+                    <div class="w-8 h-8 rounded flex items-center justify-center text-lg font-bold transition-all
+                        {% if day.completed %}
+                        bg-secondary-100 dark:bg-secondary-900/30 text-secondary-600 dark:text-secondary-400
+                        {% else %}
+                        bg-danger-100 dark:bg-danger-900/30 text-danger-600 dark:text-danger-400
+                        {% endif %}
+                        hover:scale-110 cursor-pointer">
+                        {% if day.completed %}✓{% else %}✗{% endif %}
+                    </div>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2.5 bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg min-w-max">
+                        <div class="font-medium mb-1.5">{{ day.date.strftime('%b %d, %Y') }}</div>
+                        <div class="space-y-1">
+                            {% for task in day.tasks %}
+                            <div class="flex items-center gap-2">
+                                <span class="{% if task.completed %}text-secondary-400{% else %}text-danger-400{% endif %} font-bold">
+                                    {% if task.completed %}✓{% else %}✗{% endif %}
+                                </span>
+                                <span class="{% if task.completed %}text-gray-300{% else %}text-gray-400{% endif %}">
+                                    {{ task.title }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <!-- Arrow -->
+                        <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
+                            <div class="border-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -7,9 +7,10 @@ bp = Blueprint('main', __name__)
 
 @bp.route('/')
 def index():
-    """Display all active tasks."""
+    """Display all active tasks and completion history."""
     tasks = Task.query.filter_by(active=True).order_by(Task.created_at.desc()).all()
-    return render_template('index.html', tasks=tasks)
+    history = Task.get_completion_history(days=7)
+    return render_template('index.html', tasks=tasks, history=history)
 
 
 @bp.route('/tasks', methods=['POST'])
