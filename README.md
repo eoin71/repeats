@@ -14,6 +14,7 @@ A simple, single-user web application for tracking daily repeating tasks. Tasks 
 - **Dark Mode**: Automatically adapts to your system's color scheme preference
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **History**: Shows the last 7 days of task history
+- **Countdowns**: Track upcoming dates with named countdown widgets showing days remaining
 
 
 ## Technology Stack
@@ -143,6 +144,15 @@ The app uses a date-based completion system:
 - Tomorrow, when the date changes, no completion record exists for the new date, so tasks appear incomplete again
 - All historical completion data is preserved
 
+### Countdowns
+
+Countdowns let you track upcoming dates alongside your daily tasks:
+
+- Add a countdown with a title and target date
+- Each countdown displays the number of days remaining
+- Shows "today" when the target date is the current day, and "X days ago" for past dates
+- Countdowns are sorted by nearest date first
+
 ### Database Schema
 
 **tasks table:**
@@ -159,26 +169,34 @@ The app uses a date-based completion system:
 - `completed_at`: Timestamp when marked complete
 - Unique constraint on (task_id, completion_date) prevents duplicate completions
 
+**countdowns table:**
+- `id`: Primary key
+- `title`: Countdown name
+- `target_date`: The date being counted down to (DATE type)
+- `active`: Boolean for soft deletes
+
 ## Project Structure
 
 ```
 repeats/
 ├── app/
-│   ├── __init__.py          # Flask app factory
-│   ├── models.py            # Database models
-│   ├── database.py          # Database initialization
-│   ├── routes.py            # HTTP endpoints
-│   ├── templates/           # HTML templates
-│   │   ├── base.html        # Base template with styling
-│   │   ├── index.html       # Main page
-│   │   └── _task_item.html  # Task card component
-│   └── static/              # Static files (optional)
-├── instance/                # SQLite database location (gitignored)
-├── run.py                   # Application entry point
-├── Dockerfile               # Docker configuration
-├── docker-compose.yml       # Development Docker Compose
-├── docker-compose.prod.yml  # Production Docker Compose (Docker Hub)
-└── pyproject.toml          # Python dependencies
+│   ├── __init__.py              # Flask app factory
+│   ├── models.py                # Database models
+│   ├── database.py              # Database initialization
+│   ├── routes.py                # HTTP endpoints
+│   ├── templates/               # HTML templates
+│   │   ├── base.html            # Base template with styling
+│   │   ├── index.html           # Main page
+│   │   ├── _task_item.html      # Task card component
+│   │   ├── _countdown_item.html # Countdown card component
+│   │   └── _history.html        # Completion history bar
+│   └── static/                  # Static files (optional)
+├── instance/                    # SQLite database location (gitignored)
+├── run.py                       # Application entry point
+├── Dockerfile                   # Docker configuration
+├── docker-compose.yml           # Development Docker Compose
+├── docker-compose.prod.yml      # Production Docker Compose (Docker Hub)
+└── pyproject.toml               # Python dependencies
 ```
 
 ## Configuration

@@ -88,6 +88,89 @@
     });
 </script>
 
+<!-- Countdowns -->
+<div class="mt-10">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-neutral-700 dark:text-neutral-300">countdowns</h2>
+        <button onclick="document.getElementById('addCountdownModal').classList.remove('hidden')"
+                class="bg-accent-500 hover:bg-accent-600 dark:bg-accent-600 dark:hover:bg-accent-700 text-white rounded-full p-2 shadow transition duration-150">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="space-y-3" id="countdown-list">
+        {% for countdown in countdowns %}
+            {% include '_countdown_item.html' %}
+        {% endfor %}
+
+        {% if not countdowns %}
+        <div class="text-center py-8 text-neutral-400 dark:text-neutral-500" id="countdown-empty-state">
+            <p class="text-sm">No countdowns yet. Click + to add one.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Countdown Modal -->
+<div id="addCountdownModal" class="hidden fixed inset-0 bg-neutral-900 bg-opacity-50 dark:bg-black dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-md w-full p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-2xl font-semibold text-neutral-800 dark:text-neutral-100">Add Countdown</h2>
+            <button onclick="document.getElementById('addCountdownModal').classList.add('hidden')"
+                    class="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form hx-post="/countdowns"
+              hx-target="#countdown-list"
+              hx-swap="afterbegin"
+              hx-on::after-request="this.reset(); document.getElementById('addCountdownModal').classList.add('hidden'); const emptyState = document.getElementById('countdown-empty-state'); if(emptyState) emptyState.remove();"
+              class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Title</label>
+                <input type="text"
+                       name="title"
+                       placeholder="e.g., Project deadline"
+                       required
+                       autofocus
+                       autocomplete="off"
+                       class="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-accent-500 focus:border-transparent text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 bg-white dark:bg-neutral-700">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Target Date</label>
+                <input type="date"
+                       name="target_date"
+                       required
+                       class="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-accent-500 focus:border-transparent text-neutral-800 dark:text-neutral-100 bg-white dark:bg-neutral-700">
+            </div>
+            <div class="flex gap-3">
+                <button type="button"
+                        onclick="document.getElementById('addCountdownModal').classList.add('hidden'); document.querySelector('#addCountdownModal form').reset();"
+                        class="flex-1 bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-200 font-medium py-2 px-4 rounded-md transition duration-150">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="flex-1 bg-accent-500 hover:bg-accent-600 dark:bg-accent-600 dark:hover:bg-accent-700 text-white font-medium py-2 px-4 rounded-md transition duration-150">
+                    Add Countdown
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('addCountdownModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+        }
+    });
+</script>
+
 <!-- Completion History -->
 {% include '_history.html' %}
 {% endblock %}

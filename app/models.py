@@ -68,6 +68,18 @@ class Task(db.Model):
         return history
 
 
+class Countdown(db.Model):
+    __tablename__ = 'countdowns'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    target_date = db.Column(db.Date, nullable=False)
+    active = db.Column(db.Boolean, default=True)
+
+    def days_remaining(self):
+        return (self.target_date - date.today()).days
+
+
 class TaskCompletion(db.Model):
     __tablename__ = 'task_completions'
 
