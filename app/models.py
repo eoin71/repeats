@@ -152,3 +152,36 @@ class TaskCompletion(db.Model):
     __table_args__ = (
         db.UniqueConstraint('task_id', 'completion_date', name='unique_task_date'),
     )
+
+
+# Labels for the 1-5 note rating scales
+MOOD_EMOJI = {1: '😞', 2: '🙁', 3: '😐', 4: '🙂', 5: '😄'}
+
+
+class Note(db.Model):
+    """A journal note about a day; a day can have many. Text and ratings are each optional."""
+    __tablename__ = 'notes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    note_date = db.Column(db.Date, nullable=False, default=date.today, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    text = db.Column(db.Text)
+    mood = db.Column(db.Integer)          # 1 (bad) - 5 (great)
+    performance = db.Column(db.Integer)   # 1 (bad) - 5 (great)
+
+    @classmethod
+    def day_summaries(cls, start, end):
+        """Per-day note count and average ratings for start..end inclusive.
+
+        Returns {date: {'count': int, 'mood': float|None, 'performance': float|None}}.
+        """
+        rows = db.session.query(
+            cls.note_date,
+            db.func.count(cls.id),
+            db.func.avg(cls.mood),
+            db.func.avg(cls.performance),
+        ).filter(cls.note_date >= start, cls.note_date <= end).group_by(cls.note_date).all()
+        return {
+            day: {'count': count, 'mood': mood, 'performance': performance}
+            for day, count, mood, performance in rows
+        }

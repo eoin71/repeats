@@ -1,0 +1,59 @@
+{# Collapsed "add a note" line that expands into the note form.
+   Expects note_date, today and context ('home' or 'day'); optional saved, error and
+   oob_count (updates the home page's "N today" counter after saving). #}
+<div class="note-quick">
+    <button type="button"
+            onclick="toggleNoteForm(this, true)"
+            class="note-open {% if error %}hidden{% endif %} w-full text-left px-4 py-3 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-600 text-sm text-neutral-500 dark:text-neutral-400 hover:border-primary-400 hover:text-primary-600 dark:hover:border-primary-500 dark:hover:text-primary-400 transition duration-150">
+        {% if saved %}<span class="text-secondary-600 dark:text-secondary-400">✓ saved</span> · {% endif %}📝 add a note
+    </button>
+
+    <form hx-post="/notes"
+          hx-target="closest .note-quick"
+          hx-swap="outerHTML"
+          class="{% if not error %}hidden{% endif %} bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 space-y-3">
+        <input type="hidden" name="note_date" value="{{ note_date.isoformat() }}">
+        <input type="hidden" name="context" value="{{ context }}">
+
+        <textarea name="text"
+                  rows="3"
+                  placeholder="{% if note_date == today %}How did today go?{% else %}How did {{ note_date.strftime('%A') }} go?{% endif %}"
+                  class="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 bg-white dark:bg-neutral-700"></textarea>
+
+        {% for field, label, options in [
+            ('mood', 'mood', [(1, '😞'), (2, '🙁'), (3, '😐'), (4, '🙂'), (5, '😄')]),
+            ('performance', 'performance', [(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')]),
+        ] %}
+        <div class="flex items-center gap-3">
+            <span class="w-24 shrink-0 text-xs text-neutral-500 dark:text-neutral-400">{{ label }}</span>
+            <div class="flex gap-1.5 flex-1">
+                {% for value, text in options %}
+                <label class="flex-1 cursor-pointer">
+                    <input type="radio" name="{{ field }}" value="{{ value }}" onclick="toggleRating(this)" class="peer sr-only">
+                    <span class="block text-center py-1.5 rounded-md text-sm font-medium transition duration-150 bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400 peer-checked:bg-primary-500 peer-checked:text-white dark:peer-checked:bg-primary-600 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-500">{{ text }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if error %}
+        <p class="text-xs text-danger-600 dark:text-danger-400">{{ error }}</p>
+        {% endif %}
+
+        <div class="flex justify-end gap-2">
+            <button type="button"
+                    onclick="toggleNoteForm(this, false)"
+                    class="px-3 py-1.5 rounded-md text-sm text-neutral-600 dark:text-neutral-300 bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 transition duration-150">
+                Cancel
+            </button>
+            <button type="submit"
+                    class="px-3 py-1.5 rounded-md text-sm font-medium text-white bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 transition duration-150">
+                Save
+            </button>
+        </div>
+    </form>
+</div>
+{% if oob_count is defined %}
+<span id="notes-today-count" hx-swap-oob="true" class="text-xs text-neutral-400 dark:text-neutral-500">{% if oob_count %}{{ oob_count }} today{% endif %}</span>
+{% endif %}

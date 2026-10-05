@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% macro rating_style(value) -%}
+background-color: hsl({{ '%.0f' % ((value - 1) / 4 * 130) }} 70% 50% / 0.35)
+{%- endmacro %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-8">
+    <h1 class="text-4xl font-bold text-neutral-800 dark:text-neutral-100 text-center">repeats</h1>
+    <div hx-get="/quote" hx-trigger="load" hx-swap="outerHTML"></div>
+</div>
+
+<div class="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
+    <!-- Left column: calendar -->
+    <div class="w-full lg:flex-1 lg:min-w-0">
+        <div class="flex items-center justify-between mb-4">
+            <a href="/" title="Back to repeats"
+               class="text-xl font-semibold text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 transition duration-150">repeats</a>
+            <!-- Colour the calendar by mood or performance -->
+            <div class="flex text-xs rounded-md overflow-hidden border border-neutral-200 dark:border-neutral-700">
+                {% for option in ['mood', 'performance'] %}
+                <a href="{{ url_for('main.notes', month=month.strftime('%Y-%m'), by=option, day=selected.isoformat() if selected else none) }}"
+                   class="px-2.5 py-1 {% if by == option %}bg-primary-500 text-white dark:bg-primary-600{% else %}text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800{% endif %}">{{ option }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+            <!-- Month navigation -->
+            <div class="flex items-center justify-between mb-3">
+                <a href="{{ url_for('main.notes', month=prev_month.strftime('%Y-%m'), by=by) }}"
+                   class="px-2 text-lg text-neutral-500 hover:text-primary-600 dark:text-neutral-400 dark:hover:text-primary-400" aria-label="Previous month">‹</a>
+                <span class="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{{ month.strftime('%B %Y') | lower }}</span>
+                {% if next_month %}
+                <a href="{{ url_for('main.notes', month=next_month.strftime('%Y-%m'), by=by) }}"
+                   class="px-2 text-lg text-neutral-500 hover:text-primary-600 dark:text-neutral-400 dark:hover:text-primary-400" aria-label="Next month">›</a>
+                {% else %}
+                <span class="px-2 text-lg text-neutral-200 dark:text-neutral-700">›</span>
+                {% endif %}
+            </div>
+
+            <!-- Weekday header -->
+            <div class="grid grid-cols-7 gap-1 text-center text-[10px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500 mb-1">
+                {% for d in ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] %}<div>{{ d }}</div>{% endfor %}
+            </div>
+
+            <!-- Days -->
+            <div class="grid grid-cols-7 gap-1">
+                {% for day in days %}
+                {% set is_selected = selected and day.date == selected %}
+                {% set classes = 'aspect-square rounded-md flex flex-col items-center justify-center gap-0.5 text-sm transition duration-150 '
+                    ~ ('' if day.in_month else 'opacity-40 ')
+                    ~ ('ring-2 ring-primary-500 dark:ring-primary-400 ' if is_selected else '')
+                    ~ ('font-bold text-primary-600 dark:text-primary-400 ' if day.date == today else 'text-neutral-700 dark:text-neutral-200 ') %}
+                {% if day.future %}
+                <div class="{{ classes }} text-neutral-300 dark:text-neutral-600">{{ day.date.day }}</div>
+                {% else %}
+                <a href="{{ url_for('main.notes', month=month.strftime('%Y-%m'), by=by, day=day.date.isoformat()) }}"
+                   class="{{ classes }} {% if not day.style %}hover:bg-neutral-100 dark:hover:bg-neutral-700{% endif %}"
+                   style="{{ day.style }}"
+                   title="{{ day.date.strftime('%a %-d %b') }}{% if day.count %} · {{ day.count }} note{{ 's' if day.count != 1 }}{% if day.value is not none %} · {{ by }} {{ '%.1f' % day.value }}{% endif %}{% endif %}">
+                    <span>{{ day.date.day }}</span>
+                    {% if day.count %}
+                    <span class="text-[10px] leading-none">
+                        {%- if day.value is not none and by == 'mood' %}{{ mood_emoji[day.value | round | int] }}
+                        {%- elif day.value is not none %}{{ ('%.1f' % day.value) | replace('.0', '') }}
+                        {%- else %}<span class="text-neutral-400">•</span>{% endif -%}
+                    </span>
+                    {% endif %}
+                </a>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Legend -->
+            <div class="flex items-center justify-center gap-1 mt-4 text-[10px] text-neutral-400 dark:text-neutral-500">
+                <span class="mr-1">{{ by }}: bad</span>
+                {% for i in range(1, 6) %}
+                <span class="w-4 h-4 rounded flex items-center justify-center" style="{{ rating_style(i) }}">{% if by == 'mood' %}{{ mood_emoji[i] }}{% endif %}</span>
+                {% endfor %}
+                <span class="ml-1">great</span>
+                <span class="ml-3"><span class="text-neutral-400">•</span> note, not rated</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column: selected day's notes -->
+    <div class="w-full lg:w-96 xl:w-[22rem] shrink-0 lg:sticky lg:top-8">
+        {% if selected %}
+        <div class="flex items-baseline justify-between mb-4">
+            <h2 class="text-xl font-semibold text-neutral-700 dark:text-neutral-300">{{ selected.strftime('%a %-d %b') | lower }}</h2>
+            {% if selected_summary %}
+            <span class="text-xs text-neutral-400 dark:text-neutral-500">
+                {% if selected_summary.mood is not none %}mood {{ '%.1f' % selected_summary.mood }}{% endif %}
+                {% if selected_summary.mood is not none and selected_summary.performance is not none %} · {% endif %}
+                {% if selected_summary.performance is not none %}perf {{ '%.1f' % selected_summary.performance }}{% endif %}
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="space-y-2 mb-3">
+            {% for note in day_notes %}
+            <div class="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-3">
+                <div class="flex items-center gap-2 text-[11px] text-neutral-400 dark:text-neutral-500">
+                    <span title="Written {{ note.created_at.strftime('%a %-d %b %H:%M') }}">
+                        {% if note.created_at.date() != note.note_date %}written {{ note.created_at.strftime('%a %-d %b') | lower }} {% endif %}{{ note.created_at.strftime('%H:%M') }}
+                    </span>
+                    {% if note.mood %}
+                    <span class="px-1.5 py-0.5 rounded text-neutral-700 dark:text-neutral-200" style="{{ rating_style(note.mood) }}" title="Mood {{ note.mood }}/5">{{ mood_emoji[note.mood] }} mood {{ note.mood }}</span>
+                    {% endif %}
+                    {% if note.performance %}
+                    <span class="px-1.5 py-0.5 rounded text-neutral-700 dark:text-neutral-200" style="{{ rating_style(note.performance) }}" title="Performance {{ note.performance }}/5">perf {{ note.performance }}</span>
+                    {% endif %}
+                    <button hx-delete="/notes/{{ note.id }}"
+                            hx-confirm="Delete this note?"
+                            class="ml-auto text-danger-500 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300 transition duration-150 p-1"
+                            aria-label="Delete note">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                {% if note.text %}
+                <p class="text-sm text-neutral-800 dark:text-neutral-100 mt-1.5 whitespace-pre-wrap">{{ note.text }}</p>
+                {% endif %}
+            </div>
+            {% else %}
+            <p class="text-sm text-neutral-400 dark:text-neutral-500 text-center py-4">No notes for this day.</p>
+            {% endfor %}
+        </div>
+
+        {% if selected <= today %}
+            {% with note_date=selected, context='day' %}
+                {% include '_note_form.html' %}
+            {% endwith %}
+        {% endif %}
+        {% else %}
+        <p class="text-sm text-neutral-400 dark:text-neutral-500 text-center py-12">Pick a day to see its notes.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

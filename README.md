@@ -17,6 +17,7 @@ A simple, single-user web application for tracking daily repeating tasks. Tasks 
 - **Dark Mode**: Automatically adapts to your system's color scheme preference
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **History**: Shows the last 7 days of task history
+- **Notes**: Quick, collapsed note-taking under your repeats: write how the day went and optionally rate mood and performance (1–5). Add as many notes a day as you like; earlier ones stay out of the way. Click the **notes** title for a month calendar coloured by average mood or performance, with each day's notes (and backdated notes) — click **repeats** to go back
 - **Countdowns**: Track upcoming dates with named countdown widgets showing days remaining
 - **Weekly Workout Plan**: Shows this week's planned workouts from [intervals.icu](https://intervals.icu) in a horizontal day-by-day strip (sport, duration, training load; click a workout to expand its full description)
 - **Cycleability Score (CS)**: A 0–10 score for how good it is to ride outdoors, from the [Met Éireann](https://www.met.ie) forecast (rain, wind, gusts, feels-like temperature, wet/icy roads). Shown for today (or tomorrow after sunset) with temperature, wind, rain and humidity, and as a badge on each planned outdoor ride using its planned start time (or the best daylight window if no time is set). Set `WEATHER_LAT`/`WEATHER_LON` to change location (defaults to Kimmage, Dublin)

@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request
-from app.models import db, Task, TaskCompletion, Countdown, ALL_DAYS, TIMES_OF_DAY
+from app.models import db, Task, TaskCompletion, Countdown, Note, ALL_DAYS, TIMES_OF_DAY, MOOD_EMOJI
 from app import intervals, quotes, strava, weather
+import calendar
 from datetime import date, datetime, timedelta
 
 bp = Blueprint('main', __name__)
@@ -39,6 +40,8 @@ def index():
         other_tasks=other_tasks,
         history=history,
         countdowns=countdowns,
+        today=today,
+        notes_today=Note.query.filter_by(note_date=today).count(),
     )
 
 
@@ -250,3 +253,110 @@ def delete_countdown(countdown_id):
     countdown.active = False
     db.session.commit()
     return '', 200
+
+
+def _rating(value):
+    """Parse an optional 1-5 rating from a form value."""
+    try:
+        rating = int(value)
+    except (TypeError, ValueError):
+        return None
+    return rating if 1 <= rating <= 5 else None
+
+
+def _rating_style(average):
+    """Background colour for an average 1-5 rating: red (1) through amber (3) to green (5)."""
+    hue = (average - 1) / 4 * 130
+    return f'background-color: hsl({hue:.0f} 70% 50% / 0.35)'
+
+
+@bp.route('/notes', methods=['POST'])
+def create_note():
+    """Save a note; text, mood and performance are each optional but one is required."""
+    context = request.form.get('context', 'home')
+    try:
+        note_date = date.fromisoformat(request.form.get('note_date', ''))
+    except ValueError:
+        note_date = date.today()
+    note_date = min(note_date, date.today())  # no notes about the future
+
+    text = request.form.get('text', '').strip() or None
+    mood = _rating(request.form.get('mood'))
+    performance = _rating(request.form.get('performance'))
+
+    if not (text or mood or performance):
+        return render_template(
+            '_note_form.html', note_date=note_date, today=date.today(), context=context,
+            error='Write something or pick a rating.',
+        )
+
+    db.session.add(Note(note_date=note_date, text=text, mood=mood, performance=performance))
+    db.session.commit()
+
+    if context == 'day':
+        # On the notes page, reload so the calendar colours and day list update
+        return '', 200, {'HX-Refresh': 'true'}
+    return render_template(
+        '_note_form.html', note_date=note_date, today=date.today(), context=context, saved=True,
+        oob_count=Note.query.filter_by(note_date=date.today()).count(),
+    )
+
+
+@bp.route('/notes/<int:note_id>', methods=['DELETE'])
+def delete_note(note_id):
+    """Delete a note and reload the notes page."""
+    note = Note.query.get_or_404(note_id)
+    db.session.delete(note)
+    db.session.commit()
+    return '', 200, {'HX-Refresh': 'true'}
+
+
+@bp.route('/notes')
+def notes():
+    """Month calendar of notes, coloured by average mood or performance, plus one day's notes."""
+    today = date.today()
+    try:
+        first = datetime.strptime(request.args.get('month', ''), '%Y-%m').date()
+    except ValueError:
+        first = today.replace(day=1)
+    by = 'performance' if request.args.get('by') == 'performance' else 'mood'
+
+    weeks = calendar.Calendar(firstweekday=0).monthdatescalendar(first.year, first.month)
+    summaries = Note.day_summaries(weeks[0][0], weeks[-1][-1])
+    days = []
+    for week in weeks:
+        for day in week:
+            summary = summaries.get(day, {'count': 0, 'mood': None, 'performance': None})
+            value = summary[by]
+            days.append({
+                'date': day,
+                'in_month': day.month == first.month,
+                'future': day > today,
+                'count': summary['count'],
+                'value': value,
+                'style': _rating_style(value) if value is not None else '',
+            })
+
+    try:
+        selected = date.fromisoformat(request.args.get('day', ''))
+    except ValueError:
+        selected = today if (first.year, first.month) == (today.year, today.month) else None
+    day_notes = []
+    if selected:
+        day_notes = Note.query.filter_by(note_date=selected).order_by(Note.created_at).all()
+
+    prev_month = (first - timedelta(days=1)).replace(day=1)
+    next_month = (first + timedelta(days=32)).replace(day=1)
+    return render_template(
+        'notes.html',
+        month=first,
+        prev_month=prev_month,
+        next_month=next_month if next_month <= today else None,
+        by=by,
+        days=days,
+        today=today,
+        selected=selected,
+        selected_summary=summaries.get(selected) if selected else None,
+        day_notes=day_notes,
+        mood_emoji=MOOD_EMOJI,
+    )

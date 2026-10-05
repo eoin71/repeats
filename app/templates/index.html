@@ -66,6 +66,18 @@
         </details>
         {% endif %}
 
+        <!-- Notes -->
+        <div class="mt-10">
+            <div class="flex items-center justify-between mb-4">
+                <a href="/notes" title="View all notes"
+                   class="text-xl font-semibold text-neutral-700 dark:text-neutral-300 hover:text-primary-600 dark:hover:text-primary-400 transition duration-150">notes</a>
+                <span id="notes-today-count" class="text-xs text-neutral-400 dark:text-neutral-500">{% if notes_today %}{{ notes_today }} today{% endif %}</span>
+            </div>
+            {% with note_date=today, context='home' %}
+                {% include '_note_form.html' %}
+            {% endwith %}
+        </div>
+
         <!-- Countdowns -->
         <div class="mt-10">
             <div class="flex items-center justify-between mb-4">

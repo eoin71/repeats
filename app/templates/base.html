@@ -90,5 +90,32 @@
     <div class="container mx-auto px-4 py-8 pb-24 max-w-6xl">
         {% block content %}{% endblock %}
     </div>
+
+    <script>
+        // Note form: open/close the inline form, resetting it on close
+        function toggleNoteForm(el, open) {
+            const box = el.closest('.note-quick');
+            const form = box.querySelector('form');
+            form.classList.toggle('hidden', !open);
+            box.querySelector('.note-open').classList.toggle('hidden', open);
+            if (open) {
+                form.querySelector('textarea').focus();
+            } else {
+                form.reset();
+                form.querySelectorAll('input[type=radio]').forEach(r => delete r.dataset.checked);
+            }
+        }
+
+        // Ratings are optional: tapping the selected rating again clears it
+        function toggleRating(input) {
+            if (input.dataset.checked) {
+                input.checked = false;
+                delete input.dataset.checked;
+            } else {
+                input.form.querySelectorAll(`input[name="${input.name}"]`).forEach(r => delete r.dataset.checked);
+                input.dataset.checked = '1';
+            }
+        }
+    </script>
 </body>
 </html>
