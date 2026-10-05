@@ -11,6 +11,13 @@ services:
     environment:
       - FLASK_APP=run.py
       - FLASK_ENV=production
+      - INTERVALS_ICU_API_KEY=${INTERVALS_ICU_API_KEY}
+      - STRAVA_CLIENT_ID=${STRAVA_CLIENT_ID}
+      - STRAVA_CLIENT_SECRET=${STRAVA_CLIENT_SECRET}
+      - STRAVA_REFRESH_TOKEN=${STRAVA_REFRESH_TOKEN}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    env_file:
+      - .env
     restart: unless-stopped
 
 volumes:

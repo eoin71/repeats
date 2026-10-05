@@ -1,0 +1,135 @@
+{% from '_cs_badge.html' import cs_classes %}
+{% macro hm(seconds) -%}
+{% set h = (seconds // 3600) %}{% set m = ((seconds % 3600) // 60) %}{% if h %}{{ h }}h{% if m %} {{ m }}m{% endif %}{% else %}{{ m }}m{% endif %}
+{%- endmacro %}
+{% macro stat(label, value, unit='') -%}
+{% if value is not none %}
+<div>
+    <p class="text-[9px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500">{{ label }}</p>
+    <p class="text-[11px] font-medium text-neutral-700 dark:text-neutral-200">{{ value }}<span class="text-neutral-400 font-normal">{{ unit }}</span></p>
+</div>
+{% endif %}
+{%- endmacro %}
+<!-- Weekly workout plan from intervals.icu -->
+<div>
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold text-neutral-700 dark:text-neutral-300">this week</h2>
+        <span class="text-xs text-neutral-400 dark:text-neutral-500">intervals.icu · Strava</span>
+    </div>
+
+    {% if events is none %}
+    <div class="text-center py-8 text-neutral-400 dark:text-neutral-500" id="workout-week">
+        <p class="text-sm">Couldn't load workout plan.</p>
+    </div>
+    {% elif not events %}
+    <div class="text-center py-8 text-neutral-400 dark:text-neutral-500" id="workout-week">
+        <p class="text-sm">No workouts planned this week.</p>
+    </div>
+    {% else %}
+    <div class="space-y-2" id="workout-week">
+        {% for day in week_dates %}
+        {% set day_events = events | selectattr('date', 'equalto', day) | list %}
+        <div class="bg-white dark:bg-neutral-800 border {% if day == today %}border-primary-300 dark:border-primary-600 ring-1 ring-primary-300 dark:ring-primary-700{% else %}border-neutral-200 dark:border-neutral-700{% endif %} rounded-lg p-3">
+            <div class="flex items-baseline gap-2 mb-2 pb-2 border-b border-neutral-100 dark:border-neutral-700">
+                <span class="text-sm font-semibold {% if day == today %}text-primary-600 dark:text-primary-400{% else %}text-neutral-700 dark:text-neutral-300{% endif %}">
+                    {{ day.strftime('%a') }}
+                </span>
+                <span class="text-xs {% if day == today %}text-primary-600 dark:text-primary-400 font-medium{% else %}text-neutral-400 dark:text-neutral-500{% endif %}">
+                    {{ day.strftime('%b %-d') }}
+                </span>
+            </div>
+
+            {% if day_events %}
+            <div class="space-y-2">
+                {% for event in day_events %}
+                <details class="group workout-item rounded-md {% if event.completed %}bg-secondary-50 dark:bg-secondary-900/20{% endif %}">
+                    <summary class="cursor-pointer list-none rounded-md p-2 -m-0.5 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition duration-150">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <span class="text-[10px] font-medium uppercase tracking-wide px-1.5 py-0.5 rounded
+                                {% if event.type == 'Ride' %}bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300
+                                {% elif event.type == 'Run' %}bg-secondary-100 text-secondary-700 dark:bg-secondary-900/40 dark:text-secondary-300
+                                {% elif event.type == 'WeightTraining' %}bg-accent-100 text-accent-700 dark:bg-accent-900/40 dark:text-accent-300
+                                {% else %}bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300{% endif %}">
+                                {{ event.type }}
+                            </span>
+                            {% if event.unplanned %}
+                            <span class="text-[10px] text-neutral-400 dark:text-neutral-500" title="Not in your intervals.icu plan">unplanned</span>
+                            {% endif %}
+                            {% if event.weather %}
+                            {% set cs = event.weather %}
+                            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded {{ cs_classes(cs.label) }} {% if not cs.confident %}opacity-60{% endif %}"
+                                  title="Cycleability {{ cs.score }} ({{ cs.label }}) · {% if cs.planned %}planned{% else %}best{% endif %} {{ cs.start }}–{{ cs.end }}{% if not cs.confident %} · longer-range forecast, less certain{% endif %}">
+                                {{ cs.icon }} CS {{ cs.score }}
+                            </span>
+                            {% endif %}
+                            {% if event.load %}
+                            <span class="text-[10px] text-neutral-400 dark:text-neutral-500 ml-auto" title="Training load">{{ event.load }}</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-xs font-medium text-neutral-800 dark:text-neutral-100 leading-snug {% if event.completed %}line-through{% endif %}">
+                            {{ event.name }}
+                        </p>
+                        {% if event.duration %}
+                        <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                            {% if event.ride %}planned {% endif %}{{ hm(event.duration) }}
+                        </p>
+                        {% endif %}
+                        {% if event.ride %}
+                        {% set ride = event.ride %}
+                        <p class="text-[11px] font-medium text-secondary-700 dark:text-secondary-400 mt-0.5">
+                            {% if ride.distance_km %}{{ ride.distance_km }} km · {% endif %}{{ hm(ride.moving_time or 0) }}{% if ride.elevation %} · {{ ride.elevation }} m ↑{% endif %}{% if ride.np %} · {{ ride.np }} W NP{% endif %}{% if ride.avg_hr %} · ♥ {{ ride.avg_hr }}{% endif %}{% if ride.prs %} · 🏆 {{ ride.prs }}{% endif %}
+                        </p>
+                        {% endif %}
+                    </summary>
+                    {% if event.ride %}
+                    {% set ride = event.ride %}
+                    <div class="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-700">
+                        {% if ride.route %}
+                        {% set r = ride.route %}
+                        <svg viewBox="0 0 {{ r.width }} {{ r.height }}" class="w-full h-auto rounded bg-neutral-50 dark:bg-neutral-900/50" role="img" aria-label="Route map of {{ ride.name }}">
+                            <path d="{{ r.path }}" fill="none" class="stroke-primary-500 dark:stroke-primary-400" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                            <circle cx="{{ '%.1f' % r.start[0] }}" cy="{{ '%.1f' % r.start[1] }}" r="4" class="fill-secondary-500 stroke-white dark:stroke-neutral-800" stroke-width="1.5"><title>Start</title></circle>
+                            <circle cx="{{ '%.1f' % r.end[0] }}" cy="{{ '%.1f' % r.end[1] }}" r="4" class="fill-danger-500 stroke-white dark:stroke-neutral-800" stroke-width="1.5"><title>Finish</title></circle>
+                        </svg>
+                        {% endif %}
+                        {% if ride.name != event.name %}
+                        <p class="text-[11px] font-medium text-neutral-700 dark:text-neutral-200 mt-2">{{ ride.name }}</p>
+                        {% endif %}
+                        <div class="grid grid-cols-3 gap-x-2 gap-y-1.5 mt-2">
+                            {{ stat('distance', ride.distance_km or none, ' km') }}
+                            {{ stat('moving', hm(ride.moving_time) if ride.moving_time else none) }}
+                            {{ stat('elevation', ride.elevation or none, ' m') }}
+                            {{ stat('avg speed', ride.avg_speed, ' km/h') }}
+                            {{ stat('max speed', ride.max_speed, ' km/h') }}
+                            {{ stat('avg power', ride.avg_watts, ' W') }}
+                            {{ stat('NP', ride.np, ' W') }}
+                            {{ stat('max power', ride.max_watts, ' W') }}
+                            {{ stat('energy', ride.kj, ' kJ') }}
+                            {{ stat('avg HR', ride.avg_hr, ' bpm') }}
+                            {{ stat('max HR', ride.max_hr, ' bpm') }}
+                            {{ stat('cadence', ride.cadence, ' rpm') }}
+                            {{ stat('rel. effort', ride.relative_effort) }}
+                            {{ stat('PRs', ride.prs or none) }}
+                            {{ stat('achievements', ride.achievements or none) }}
+                            {{ stat('temp', ride.temp, '°C') }}
+                        </div>
+                        <a href="{{ ride.url }}" target="_blank" rel="noopener"
+                           class="inline-block mt-2 text-[11px] font-semibold text-accent-600 dark:text-accent-400 hover:underline">View on Strava</a>
+                    </div>
+                    {% endif %}
+                    {% if event.description %}
+                    <div class="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-700 text-[11px] text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap leading-relaxed">
+                        {{ event.description }}
+                    </div>
+                    {% endif %}
+                </details>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-[11px] text-neutral-300 dark:text-neutral-600 text-center py-2">—</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>

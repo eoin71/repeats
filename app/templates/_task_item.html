@@ -16,10 +16,22 @@
             <h3 class="text-lg font-medium text-neutral-800 dark:text-neutral-100 {% if task.is_completed_today() %}line-through{% endif %}">
                 {{ task.title }}
             </h3>
+            {% if task.schedule_label() %}
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{{ task.schedule_label() }}</p>
+            {% endif %}
             {% if task.description %}
             <p class="text-neutral-600 dark:text-neutral-400 mt-1 text-sm">{{ task.description }}</p>
             {% endif %}
         </div>
+
+        <!-- Streak -->
+        {% set streak = task.current_streak() %}
+        {% if streak >= 2 %}
+        <div class="flex-shrink-0 pt-1 text-sm font-semibold text-accent-600 dark:text-accent-400"
+             title="{{ streak }} days in a row">
+            🔥 {{ streak }}
+        </div>
+        {% endif %}
 
         <!-- Delete Button -->
         <div class="flex-shrink-0">

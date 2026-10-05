@@ -1,0 +1,53 @@
+<!-- Fitness / fatigue widget from intervals.icu wellness data -->
+<div class="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+    <div class="flex items-center justify-between mb-1">
+        <h2 class="text-lg font-semibold text-neutral-700 dark:text-neutral-300">form</h2>
+        <span class="text-[11px] text-neutral-400 dark:text-neutral-500">42 days</span>
+    </div>
+
+    {% if chart and latest %}
+    <!-- Numbers above the charts -->
+    <div class="flex items-start justify-between mb-3">
+        <div>
+            <p class="text-[11px] uppercase tracking-wide text-primary-500 dark:text-primary-400">fitness</p>
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-3xl font-bold text-neutral-800 dark:text-neutral-100">{{ latest.fitness|round|int }}</span>
+                {% if previous %}
+                {% set d = (latest.fitness - previous.fitness)|round|int %}
+                {% if d != 0 %}
+                <span class="text-[11px] font-medium {{ 'text-secondary-500' if d > 0 else 'text-danger-500' }}">{{ '+' if d > 0 else '' }}{{ d }}</span>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="text-right">
+            <p class="text-[11px] uppercase tracking-wide text-accent-500 dark:text-accent-400">fatigue</p>
+            <div class="flex items-baseline gap-1.5 justify-end">
+                <span class="text-3xl font-bold text-neutral-800 dark:text-neutral-100">{{ latest.fatigue|round|int }}</span>
+                {% if previous %}
+                {% set d = (latest.fatigue - previous.fatigue)|round|int %}
+                {% if d != 0 %}
+                <span class="text-[11px] font-medium {{ 'text-secondary-500' if d > 0 else 'text-danger-500' }}">{{ '+' if d > 0 else '' }}{{ d }}</span>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts below the numbers -->
+    <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" class="w-full h-36" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+            <linearGradient id="fitnessFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6366F1" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#6366F1" stop-opacity="0"/>
+            </linearGradient>
+        </defs>
+        <path d="{{ chart.area }}" fill="url(#fitnessFill)" stroke="none"/>
+        <path d="{{ chart.line }}" fill="none" stroke="#F97316" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    {% else %}
+    <div class="text-center py-10 text-neutral-400 dark:text-neutral-500">
+        <p class="text-sm">No fitness data available.</p>
+    </div>
+    {% endif %}
+</div>

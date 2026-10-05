@@ -1,0 +1,57 @@
+{% from '_cs_badge.html' import cs_classes %}
+<!-- Cycleability + general weather from Met Éireann -->
+<div>
+    <div class="flex items-center justify-between mb-2">
+        <h2 class="text-xl font-semibold text-neutral-700 dark:text-neutral-300">
+            {% if forecast and forecast.date != today %}tomorrow{% else %}today{% endif %}
+        </h2>
+        <span class="text-xs text-neutral-400 dark:text-neutral-500">Met Éireann</span>
+    </div>
+
+    {% if forecast %}
+    <div class="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-3">
+        <div class="flex items-center gap-3">
+            <span class="text-4xl leading-none" aria-hidden="true">{{ forecast.icon }}</span>
+            <div class="flex-grow">
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-bold text-neutral-800 dark:text-neutral-100">{{ forecast.temp_max }}°</span>
+                    <span class="text-sm text-neutral-400 dark:text-neutral-500">{{ forecast.temp_min }}°</span>
+                </div>
+                <p class="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    best ride {{ forecast.start }}–{{ forecast.end }}
+                </p>
+            </div>
+            <div class="text-right">
+                <span class="inline-block text-sm font-semibold px-2 py-1 rounded {{ cs_classes(forecast.label) }}"
+                      title="Cycleability score (0-10)">CS {{ forecast.score }}</span>
+                <p class="text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">{{ forecast.label }}</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700 text-center">
+            <div>
+                <p class="text-[10px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500">wind</p>
+                <p class="text-xs font-medium text-neutral-700 dark:text-neutral-200">
+                    {{ forecast.wind_dir }} {{ forecast.wind }}<span class="text-neutral-400"> km/h</span>
+                </p>
+                {% if forecast.gust %}
+                <p class="text-[10px] text-neutral-400 dark:text-neutral-500">gusts {{ forecast.gust }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <p class="text-[10px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500">rain</p>
+                <p class="text-xs font-medium text-neutral-700 dark:text-neutral-200">{{ forecast.rain }}<span class="text-neutral-400"> mm</span></p>
+            </div>
+            <div>
+                <p class="text-[10px] uppercase tracking-wide text-neutral-400 dark:text-neutral-500">humidity</p>
+                <p class="text-xs font-medium text-neutral-700 dark:text-neutral-200">
+                    {% if forecast.humidity is not none %}{{ forecast.humidity }}%{% else %}–{% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-6 text-neutral-400 dark:text-neutral-500">
+        <p class="text-sm">Couldn't load the forecast.</p>
+    </div>
+    {% endif %}
+</div>

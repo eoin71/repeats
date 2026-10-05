@@ -1,0 +1,8 @@
+{% if quote %}
+<figure class="mt-2 text-center max-w-2xl mx-auto">
+    <blockquote class="italic text-neutral-600 dark:text-neutral-400">&ldquo;{{ quote.quote }}&rdquo;</blockquote>
+    {% if quote.author %}
+    <figcaption class="mt-1 text-sm text-neutral-500 dark:text-neutral-500">&mdash; {{ quote.author }}</figcaption>
+    {% endif %}
+</figure>
+{% endif %}

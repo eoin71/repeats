@@ -3,6 +3,13 @@ from datetime import date, timedelta, datetime
 
 db = SQLAlchemy()
 
+# Weekdays are stored as digits (Monday=0 ... Sunday=6), e.g. '024' = Mon/Wed/Fri
+ALL_DAYS = '0123456'
+DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+# Optional time-of-day tags, in display order; untagged tasks count as afternoon
+TIMES_OF_DAY = ['morning', 'afternoon', 'evening']
+
 class Task(db.Model):
     __tablename__ = 'tasks'
 
@@ -11,6 +18,8 @@ class Task(db.Model):
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     active = db.Column(db.Boolean, default=True)
+    days = db.Column(db.String(7), nullable=False, default=ALL_DAYS, server_default=ALL_DAYS)
+    time_of_day = db.Column(db.String(10))
 
     completions = db.relationship('TaskCompletion', backref='task', cascade='all, delete-orphan')
 
@@ -19,12 +28,61 @@ class Task(db.Model):
         today = date.today()
         return any(c.completion_date == today for c in self.completions)
 
+    def is_scheduled(self, day):
+        """Check if this task is due on the given date."""
+        return str(day.weekday()) in (self.days or ALL_DAYS)
+
+    def schedule_label(self):
+        """Short description of the task's days, or None if it's every day."""
+        days = self.days or ALL_DAYS
+        if days == ALL_DAYS:
+            return None
+        if days == '01234':
+            return 'Weekdays'
+        if days == '56':
+            return 'Weekends'
+        return ' · '.join(DAY_NAMES[int(d)] for d in days)
+
+    def next_scheduled_day(self):
+        """Name of the next day after today this task is due."""
+        today = date.today()
+        for offset in range(1, 8):
+            day = today + timedelta(days=offset)
+            if self.is_scheduled(day):
+                return 'Tomorrow' if offset == 1 else DAY_NAMES[day.weekday()]
+        return None
+
+    def current_streak(self):
+        """Count consecutive completed scheduled days up to today.
+
+        Days the task isn't scheduled on are skipped. If today isn't completed
+        yet, the streak counts back from the previous scheduled day so it isn't
+        shown as broken until a scheduled day has been missed.
+        """
+        done = {c.completion_date for c in self.completions}
+        if not done:
+            return 0
+        earliest = min(done)
+
+        day = date.today()
+        if day not in done:
+            day -= timedelta(days=1)
+
+        streak = 0
+        while day >= earliest:
+            if self.is_scheduled(day):
+                if day not in done:
+                    break
+                streak += 1
+            day -= timedelta(days=1)
+        return streak
+
     @classmethod
     def get_completion_history(cls, days=7):
         """Get completion status for the last N days.
 
         Returns list of dicts with date, completion status, and task details.
-        A day is marked complete if all tasks that existed on that day were completed.
+        A day is marked complete if all tasks scheduled on that day were completed.
         Tasks are only counted for days on or after their creation date.
         """
         today = date.today()
@@ -37,10 +95,13 @@ class Task(db.Model):
             # Convert check_date to datetime for comparison with created_at
             check_datetime = datetime.combine(check_date, datetime.min.time())
 
-            tasks_on_date = cls.query.filter(
-                cls.active == True,
-                cls.created_at <= check_datetime
-            ).all()
+            tasks_on_date = [
+                task for task in cls.query.filter(
+                    cls.active == True,
+                    cls.created_at <= check_datetime
+                ).all()
+                if task.is_scheduled(check_date)
+            ]
 
             if not tasks_on_date:
                 # Skip days with no tasks

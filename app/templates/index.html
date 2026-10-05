@@ -4,6 +4,7 @@
 <!-- Header with Add Button -->
 <div class="mb-8 relative">
     <h1 class="text-4xl font-bold text-neutral-800 dark:text-neutral-100 text-center">repeats</h1>
+    <div hx-get="/quote" hx-trigger="load" hx-swap="outerHTML"></div>
     <button onclick="document.getElementById('addTaskModal').classList.remove('hidden')"
             class="absolute top-0 right-0 bg-primary-500 hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-700 text-white rounded-full p-3 shadow-lg transition duration-150">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -12,20 +13,122 @@
     </button>
 </div>
 
-<!-- Task List -->
-<div class="space-y-3" id="task-list">
-    {% for task in tasks %}
-        {% include '_task_item.html' %}
-    {% endfor %}
+<div class="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
+    <!-- Left column: repeats + countdowns -->
+    <div class="w-full lg:flex-1 lg:min-w-0">
+        <!-- Task List -->
+        <div class="space-y-3" id="task-list">
+            {% for heading, group in task_groups %}
+                {% if heading %}
+                <h2 class="text-sm font-semibold text-neutral-500 dark:text-neutral-400 {% if not loop.first %}pt-4{% endif %}">{{ heading }}</h2>
+                {% endif %}
+                {% for task in group %}
+                    {% include '_task_item.html' %}
+                {% endfor %}
+            {% endfor %}
 
-    {% if not tasks %}
-    <div class="text-center py-12 text-neutral-400 dark:text-neutral-500" id="empty-state">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-        </svg>
-        <p class="text-lg">No tasks yet. Click the + button to add your first task!</p>
+            {% if not tasks %}
+            <div class="text-center py-12 text-neutral-400 dark:text-neutral-500" id="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p class="text-lg">{% if other_tasks %}Nothing due today.{% else %}No tasks yet. Click the + button to add your first task!{% endif %}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tasks not scheduled today -->
+        {% if other_tasks %}
+        <details class="mt-4 group">
+            <summary class="cursor-pointer select-none text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">
+                not today ({{ other_tasks|length }})
+            </summary>
+            <div class="space-y-2 mt-3">
+                {% for task in other_tasks %}
+                <div class="flex items-center gap-4 rounded-lg border border-neutral-200 dark:border-neutral-700 px-4 py-2 opacity-70"
+                     id="task-{{ task.id }}">
+                    <div class="flex-grow">
+                        <span class="text-neutral-800 dark:text-neutral-100">{{ task.title }}</span>
+                        <span class="text-xs text-neutral-500 dark:text-neutral-400 ml-2">{% if task.time_of_day %}{{ task.time_of_day|capitalize }} · {% endif %}{{ task.schedule_label() }} · next {{ task.next_scheduled_day() }}</span>
+                    </div>
+                    <button hx-delete="/tasks/{{ task.id }}"
+                            hx-target="#task-{{ task.id }}"
+                            hx-swap="outerHTML swap:0.3s"
+                            hx-confirm="Are you sure you want to delete this task?"
+                            class="flex-shrink-0 text-danger-500 hover:text-danger-700 dark:text-danger-400 dark:hover:text-danger-300 transition duration-150 p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </details>
+        {% endif %}
+
+        <!-- Countdowns -->
+        <div class="mt-10">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-neutral-700 dark:text-neutral-300">countdowns</h2>
+                <button onclick="document.getElementById('addCountdownModal').classList.remove('hidden')"
+                        class="bg-accent-500 hover:bg-accent-600 dark:bg-accent-600 dark:hover:bg-accent-700 text-white rounded-full p-2 shadow transition duration-150">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-3" id="countdown-list">
+                {% for countdown in countdowns %}
+                    {% include '_countdown_item.html' %}
+                {% endfor %}
+
+                {% if not countdowns %}
+                <div class="text-center py-8 text-neutral-400 dark:text-neutral-500" id="countdown-empty-state">
+                    <p class="text-sm">No countdowns yet. Click + to add one.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
-    {% endif %}
+
+    <!-- Right column: fitness/fatigue widget + weekly workout plan (loaded async from intervals.icu) -->
+    <div class="w-full lg:w-96 xl:w-[22rem] shrink-0 lg:sticky lg:top-8 space-y-6">
+        <!-- Cycleability + weather widget -->
+        <div hx-get="/weather" hx-trigger="load" hx-swap="outerHTML">
+            <div class="animate-pulse">
+                <div class="h-5 bg-neutral-200 dark:bg-neutral-700 rounded w-16 mb-2"></div>
+                <div class="h-24 bg-neutral-200 dark:bg-neutral-700 rounded-lg"></div>
+            </div>
+        </div>
+
+        <!-- Fitness / fatigue widget -->
+        <div hx-get="/fitness" hx-trigger="load" hx-swap="outerHTML">
+            <div class="animate-pulse">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="h-5 bg-neutral-200 dark:bg-neutral-700 rounded w-16"></div>
+                </div>
+                <div class="h-24 bg-neutral-200 dark:bg-neutral-700 rounded-lg"></div>
+            </div>
+        </div>
+
+        <div hx-get="/workouts" hx-trigger="load" hx-swap="outerHTML">
+            <div class="animate-pulse">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-neutral-300 dark:text-neutral-600">this week</h2>
+                </div>
+                <div class="space-y-2">
+                    {% for i in range(7) %}
+                    <div class="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-3 opacity-50">
+                        <div class="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-2/3 mb-2"></div>
+                        <div class="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-full mb-1"></div>
+                        <div class="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-4/5"></div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Add Task Modal -->
@@ -64,9 +167,31 @@
                           autocomplete="off"
                           class="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-neutral-800 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 bg-white dark:bg-neutral-700"></textarea>
             </div>
+            <div>
+                <span class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Days</span>
+                <div class="flex gap-1.5">
+                    {% for label in ['M', 'T', 'W', 'T', 'F', 'S', 'S'] %}
+                    <label class="flex-1 cursor-pointer">
+                        <input type="checkbox" name="days" value="{{ loop.index0 }}" checked class="peer sr-only">
+                        <span class="block text-center py-2 rounded-md text-sm font-medium transition duration-150 bg-neutral-200 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400 peer-checked:bg-primary-500 peer-checked:text-white dark:peer-checked:bg-primary-600 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-500">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div>
+                <span class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Time of day</span>
+                <div class="flex gap-1.5">
+                    {% for value, label in [('', 'Any'), ('morning', 'Morning'), ('afternoon', 'Afternoon'), ('evening', 'Evening')] %}
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="time_of_day" value="{{ value }}" {% if not value %}checked{% endif %} class="peer sr-only">
+                        <span class="block text-center py-2 rounded-md text-sm font-medium transition duration-150 bg-neutral-200 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400 peer-checked:bg-primary-500 peer-checked:text-white dark:peer-checked:bg-primary-600 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-500">{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
             <div class="flex gap-3">
                 <button type="button"
-                        onclick="document.getElementById('addTaskModal/').classList.add('hidden'); document.querySelector('#addTaskModal form').reset();"
+                        onclick="document.getElementById('addTaskModal').classList.add('hidden'); document.querySelector('#addTaskModal form').reset();"
                         class="flex-1 bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-200 font-medium py-2 px-4 rounded-md transition duration-150">
                     Cancel
                 </button>
@@ -76,40 +201,6 @@
                 </button>
             </div>
         </form>
-    </div>
-</div>
-
-<!-- Close modal when clicking outside -->
-<script>
-    document.getElementById('addTaskModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.classList.add('hidden');
-        }
-    });
-</script>
-
-<!-- Countdowns -->
-<div class="mt-10">
-    <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-semibold text-neutral-700 dark:text-neutral-300">countdowns</h2>
-        <button onclick="document.getElementById('addCountdownModal').classList.remove('hidden')"
-                class="bg-accent-500 hover:bg-accent-600 dark:bg-accent-600 dark:hover:bg-accent-700 text-white rounded-full p-2 shadow transition duration-150">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-        </button>
-    </div>
-
-    <div class="space-y-3" id="countdown-list">
-        {% for countdown in countdowns %}
-            {% include '_countdown_item.html' %}
-        {% endfor %}
-
-        {% if not countdowns %}
-        <div class="text-center py-8 text-neutral-400 dark:text-neutral-500" id="countdown-empty-state">
-            <p class="text-sm">No countdowns yet. Click + to add one.</p>
-        </div>
-        {% endif %}
     </div>
 </div>
 
@@ -164,6 +255,11 @@
 </div>
 
 <script>
+    document.getElementById('addTaskModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+        }
+    });
     document.getElementById('addCountdownModal').addEventListener('click', function(e) {
         if (e.target === this) {
             this.classList.add('hidden');

@@ -8,6 +8,9 @@ A simple, single-user web application for tracking daily repeating tasks. Tasks 
 ## Features
 
 - **Daily Task Management**: Create tasks that automatically reset every day
+- **Specific Days**: Schedule tasks for chosen weekdays only (e.g. Mon/Wed/Fri); tasks not due today are tucked into a collapsible "not today" section
+- **Time of Day**: Optionally tag tasks as morning, afternoon or evening; when any of today's tasks are tagged the list is grouped under those headings (untagged tasks count as afternoon)
+- **Streaks**: Each task shows a 🔥 count of consecutive scheduled days completed
 - **Simple Interface**: Clean, minimal design focused on task completion
 - **Task Completion Tracking**: Mark tasks as complete with a single click
 - **Persistent History**: All completion data is stored for potential future analytics
@@ -15,6 +18,9 @@ A simple, single-user web application for tracking daily repeating tasks. Tasks 
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **History**: Shows the last 7 days of task history
 - **Countdowns**: Track upcoming dates with named countdown widgets showing days remaining
+- **Weekly Workout Plan**: Shows this week's planned workouts from [intervals.icu](https://intervals.icu) in a horizontal day-by-day strip (sport, duration, training load; click a workout to expand its full description)
+- **Cycleability Score (CS)**: A 0–10 score for how good it is to ride outdoors, from the [Met Éireann](https://www.met.ie) forecast (rain, wind, gusts, feels-like temperature, wet/icy roads). Shown for today (or tomorrow after sunset) with temperature, wind, rain and humidity, and as a badge on each planned outdoor ride using its planned start time (or the best daylight window if no time is set). Set `WEATHER_LAT`/`WEATHER_LON` to change location (defaults to Kimmage, Dublin)
+- **Completed Rides (Strava)**: Completed rides are pulled from Strava and matched to the planned workout (or shown as "unplanned"), with a distance · time · elevation · NP · HR · PRs summary. Expand a ride to see its route and full stats. Needs `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` and `STRAVA_REFRESH_TOKEN` in `.env`; run `uv run python scripts/strava_auth.py` once to authorise and save the refresh token
 
 
 ## Technology Stack
@@ -153,6 +159,16 @@ Countdowns let you track upcoming dates alongside your daily tasks:
 - Shows "today" when the target date is the current day, and "X days ago" for past dates
 - Countdowns are sorted by nearest date first
 
+### Weekly Workout Plan
+
+Between the tasks and countdowns, the app shows a horizontally scrollable Mon–Sun strip of planned workouts fetched live from intervals.icu:
+
+- Each day card lists that day's workouts with a sport badge, name, duration and training load (TSS)
+- Click a workout to expand its full description
+- Today's card is highlighted
+- Loaded asynchronously so the main page stays fast; if intervals.icu is unreachable the section degrades to a quiet empty state
+- Requires `INTERVALS_ICU_API_KEY` (see Configuration)
+
 ### Database Schema
 
 **tasks table:**
@@ -184,18 +200,20 @@ repeats/
 │   ├── models.py                # Database models
 │   ├── database.py              # Database initialization
 │   ├── routes.py                # HTTP endpoints
+│   ├── intervals.py             # intervals.icu API client (weekly workout plan)
 │   ├── templates/               # HTML templates
 │   │   ├── base.html            # Base template with styling
 │   │   ├── index.html           # Main page
 │   │   ├── _task_item.html      # Task card component
 │   │   ├── _countdown_item.html # Countdown card component
+│   │   ├── _workout_week.html   # Weekly workout plan strip
 │   │   └── _history.html        # Completion history bar
 │   └── static/                  # Static files (optional)
 ├── instance/                    # SQLite database location (gitignored)
 ├── run.py                       # Application entry point
 ├── Dockerfile                   # Docker configuration
 ├── docker-compose.yml           # Development Docker Compose
-├── docker-compose.prod.yml      # Production Docker Compose (Docker Hub)
+├── docker-compose.prod.yml      # Production Compose (Docker Hub)
 └── pyproject.toml               # Python dependencies
 ```
 
@@ -205,6 +223,8 @@ repeats/
 
 - `FLASK_APP`: Set to `run.py` (default in production)
 - `FLASK_ENV`: Set to `production` for deployment
+- `INTERVALS_ICU_API_KEY`: **Required for the workout plan section.** Your intervals.icu API key from `/settings` on intervals.icu. Loaded automatically from `.env` in local development; pass it through `env_file`/`environment` in Docker.
+- `INTERVALS_ICU_ATHLETE_ID`: Optional. Override athlete id discovery (auto-detected from the API key if unset).
 
 ### Gunicorn Settings
 
