@@ -17,8 +17,6 @@ services:
       - STRAVA_CLIENT_SECRET=${STRAVA_CLIENT_SECRET}
       - STRAVA_REFRESH_TOKEN=${STRAVA_REFRESH_TOKEN}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    env_file:
-      - .env
     restart: unless-stopped
 
 volumes:
